@@ -30,7 +30,7 @@ where `<FIRRTL_DIR>` is the path to the FIRRTL repository.
 
 # Running benchmarks
 
-To run the benchmarks via the following commands:
+The benchmarks can be run via the following commands:
 ```
 cd scripts
 bash run-evaluation.sh <CALYX_DIR>
