@@ -184,6 +184,9 @@ function main () {
             process_results ${name} ${logs}
         )
     done < ${TEST_LIST}
+    echo "Performance results: ${PERFORMANCE_CSV}"
+    echo "SystemVerilog file size results: ${BYTES_OF_SV_CSV}"
+    echo "Cycle counts results: ${CYCLE_COUNTS_CSV}"
 }
 
 main

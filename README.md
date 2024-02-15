@@ -1,5 +1,5 @@
 # Evaluation for Calyx's FIRRTL backend
-                                                                                                                                                          
+
 This repository contains evaluation materials for Calyx's new FIRRTL
 backend. They consist of scripts to run Verilator simulation for
 SystemVerilog programs compiled from
@@ -23,15 +23,10 @@ fud2 edit-config
 ```
 Add the following fields (if they are not already set):
 ```
-rsrc = "<CALYX_DIR>/fud2/rsrc"
-
-[calyx]
-base = "<CALYX_DIR>"
-
 [firrtl]
 exe = "<FIRRTL_DIR>/utils/bin/firrtl"
 ```
-where `<CALYX_DIR>` is the path to the Calyx repository, and `<FIRRTL_DIR>` is the path to the FIRRTL repository.
+where `<FIRRTL_DIR>` is the path to the FIRRTL repository.
 
 # Running benchmarks
 
