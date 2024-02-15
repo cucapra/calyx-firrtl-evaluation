@@ -9,3 +9,4 @@ PAPER_DIR=$1
 SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 bash ${SCRIPT_DIR}/generate-performance-latex.sh ${PAPER_DIR}
 bash ${SCRIPT_DIR}/generate-filesize-latex.sh ${PAPER_DIR}
+bash ${SCRIPT_DIR}/generate-combined-table-latex.sh ${PAPER_DIR}

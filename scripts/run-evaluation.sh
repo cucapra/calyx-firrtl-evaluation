@@ -1,6 +1,6 @@
 # assumes that you have fud2 setup
-if [ $# -ne 2 ]; then
-    echo "USAGE: bash $0 TEST_LIST CALYX_DIR"
+if [ $# -ne 1 ]; then
+    echo "USAGE: bash $0 CALYX_DIR"
     exit
 fi
 
@@ -14,10 +14,13 @@ LOGS=${GENERATED_DATA_DIR}/logs
 RESULTS_DIR=${GENERATED_DATA_DIR}/results
 PERFORMANCE_CSV=${RESULTS_DIR}/performance.csv
 BYTES_OF_SV_CSV=${RESULTS_DIR}/bytes-of-sv.csv
+CYCLE_COUNTS_CSV=${RESULTS_DIR}/cycle-counts.csv
 MODES=(calyx firrtl@sv firrtl@firrtl)
 
-TEST_LIST=$1
-CALYX_DIR=$2
+TEST_LIST=${SCRIPT_DIR}/bench-list.txt
+CALYX_DIR=$1
+
+source ${SCRIPT_DIR}/helper.sh
 
 if [ ! -d ${CALYX_DIR} ]; then
     echo "${CALYX_DIR} not directory!"
@@ -62,7 +65,6 @@ function run_executable() {
     local exec_file=$1
     local data_dir=$2
     local log_file=$3
-    echo "Running executable ${exec_file}..."
     (
         set -o xtrace
         time ./${exec_file} +DATA=${data_dir} +CYCLE_LIMIT=500000000 +NOTRACE=1
@@ -79,8 +81,12 @@ function run_executables() {
         mode_data_dir=${mode}-data
         cp -r ${data_dir} ${mode_data_dir}
         if [ -f ${mode}.exe ]; then
-            run_executable ${mode}.exe ${mode_data_dir} ${logs}/gol-exec-${mode}
-            python3 ${CALYX_DIR}/fud2/rsrc/json-dat.py --to-json ${logs}/${mode}-result.json ${mode_data_dir}
+            echo "Running executable for ${mode}..."
+            for num in $( seq 1 10 ); do
+                rm -f ${mode_data_dir}/*.out
+                run_executable ${mode}.exe ${mode_data_dir} ${logs}/gol-exec-${mode}-${num}
+            done
+            python3 ${CALYX_DIR}/fud2/rsrc/json-dat.py --to-json ${logs}/${mode}-result.json ${mode_data_dir} # just get the result from the last run
         else
             echo ${mode}.exe does not exist!
         fi
@@ -102,12 +108,21 @@ function get_time_from_log() {
         sec=$(echo ${t} | cut -d\. -f1 | cut -dm -f2)
         frac=$(echo ${t} | cut -d. -f2 | tr -d 's')
         time=$(echo "scale=3;(((${min} * 60)+${sec}) * 1000)+${frac}" | bc -l) # counting in miliseconds
-        # local fail=$(grep "BUILD FAILURE" ${mvn_log})
-        # if [ ! -z "${fail}" ]; then time="-"${time}; fi
         echo ${time}
     else
         echo -0                 # something failed.
     fi
+}
+
+function get_avg_time_from_logs() {
+    local mode=$1
+    local logs=$2
+    sum_expr_acc=0
+    for log_file in $( ls ${logs}/gol-exec-${mode}-* ); do
+        runtime=$( get_time_from_log ${log_file} )
+        sum_expr_acc="${sum_expr_acc} + ${runtime}"
+    done
+    round $( echo "(${sum_expr_acc}) / 10" | bc -l ) 0
 }
 
 function process_results() {
@@ -117,7 +132,7 @@ function process_results() {
     short_name=$( echo "${bench_name}" | sed 's/linear-algebra-//g' )
     time_line="${short_name}"
     for mode in "${MODES[@]}"; do
-        mode_time=$( get_time_from_log ${logs}/gol-exec-${mode} )
+        mode_time=$( get_avg_time_from_logs ${mode} ${logs} )
         time_line="${time_line},${mode_time}"
     done
     echo "${time_line}" >> ${PERFORMANCE_CSV}
@@ -127,12 +142,27 @@ function process_results() {
         sv_file=${ws}/${mode}-build/${bench_name}.sv
         if [ -f ${sv_file} ]; then
             mode_bytes=$( cat ${sv_file} | wc -c )
+            mode_kb=$( echo "scale=1; ${mode_bytes} / 1000" | bc -l )
+            mode_kb=$( round "${mode_kb}" 0 )
         else
             mode_bytes=-0       # something failed.
         fi
-        bytes_line="${bytes_line},${mode_bytes}"
+        bytes_line="${bytes_line},${mode_kb}"
     done
     echo "${bytes_line}" >> ${BYTES_OF_SV_CSV}
+    # extract cycle count
+    cycles_line="${short_name}"
+    for mode in "${MODES[@]}"; do
+        # cycle counts should be the same across all 10 runs?
+        first_log=${logs}/gol-exec-${mode}-1
+        if [ -f ${first_log} ]; then
+            mode_cycles=$( grep ^Simulated ${first_log} | rev | cut -d' ' -f2 | rev )
+        else
+            mode_cycles=-0
+        fi
+        cycles_line="${cycles_line},${mode_cycles}"
+    done
+    echo "${cycles_line}" >> ${CYCLE_COUNTS_CSV}
 }
 
 function main () {
@@ -140,6 +170,7 @@ function main () {
     mkdir -p ${WS} ${LOGS} ${RESULTS_DIR}
     echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${PERFORMANCE_CSV}
     echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${BYTES_OF_SV_CSV}
+    echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${CYCLE_COUNTS_CSV}
     while read name; do
         ws=${WS}/${name}
         logs=${LOGS}/${name}

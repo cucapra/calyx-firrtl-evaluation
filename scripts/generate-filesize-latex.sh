@@ -44,7 +44,7 @@ function make_header() {
     echo "
 \begin{table}[t!]
 \footnotesize
-\caption{Filesize of emitted \sv in bytes.}
+\caption{Filesize of emitted \sv in kilobytes.}
 \begin{center}
 \begin{tabular}{|l|r|r|r|}
 \hline
@@ -58,7 +58,7 @@ function make_footer() {
     echo "\hline
 \end{tabular}
 %\end{adjustbox}
-\label{tabular:output:performance}
+\label{tabular:output:filesize}
 \end{center}
 \end{table}
 "
