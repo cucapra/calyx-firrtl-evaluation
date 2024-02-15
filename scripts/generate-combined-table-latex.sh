@@ -31,7 +31,7 @@ function make_header() {
     echo "
 \begin{table}[t!]
 \footnotesize
-\caption{Results of preliminary experiments. \runtimeHeader is simulation time in milliseconds, and \filesizeHeader is the size of the emitted \sv in kilobytes.}
+\caption{\small Preliminary Results. \runtimeHeader is simulation time in milliseconds, and \filesizeHeader is the size of the emitted Verilog in kilobytes.}
 \vspace{-3mm}
 \begin{center}
 \begin{tabular}{lcccccc}
