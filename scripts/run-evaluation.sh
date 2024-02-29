@@ -68,7 +68,7 @@ function setup_executables() {
         # create a copy that contains ref
         sed 's/@external([0-9]*)/ref/g' ${futil_file} | sed 's/@external/ref/g' > partial.futil
         # compile that to sv
-        ${CALYX_DIR}/target/debug/calyx -l /home/ayaka/projects/calyx -b verilog partial.futil --synthesis > ${bench_name}.sv
+        ${CALYX_DIR}/target/debug/calyx -l ${CALYX_DIR} -b verilog partial.futil --synthesis > ${bench_name}.sv
         # create custom tb
         python3 ${CALYX_DIR}/tools/firrtl/generate-testbench.py partial.futil > refmem_tb.sv
         # create executable using verilator
