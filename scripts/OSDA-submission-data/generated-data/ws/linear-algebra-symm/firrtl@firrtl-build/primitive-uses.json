@@ -1,0 +1,197 @@
+[
+  {
+    "name": "std_le",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      }
+    ]
+  },
+  {
+    "name": "undef",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 1
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 0
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 1
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 0
+      }
+    ]
+  },
+  {
+    "name": "std_mult_pipe",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 32
+      }
+    ]
+  },
+  {
+    "name": "std_add",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 11
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 1
+      }
+    ]
+  },
+  {
+    "name": "std_lt",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      }
+    ]
+  },
+  {
+    "name": "std_reg",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      }
+    ]
+  },
+  {
+    "name": "std_reg",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 32
+      }
+    ]
+  },
+  {
+    "name": "std_reg",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 5
+      }
+    ]
+  },
+  {
+    "name": "std_reg",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 2
+      }
+    ]
+  },
+  {
+    "name": "std_add",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 32
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 4
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 7
+      }
+    ]
+  },
+  {
+    "name": "std_wire",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 1
+      }
+    ]
+  },
+  {
+    "name": "std_const",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 32
+      },
+      {
+        "param_name": "VALUE",
+        "param_value": 0
+      }
+    ]
+  },
+  {
+    "name": "std_reg",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 1
+      }
+    ]
+  },
+  {
+    "name": "std_add",
+    "params": [
+      {
+        "param_name": "WIDTH",
+        "param_value": 5
+      }
+    ]
+  }
+]

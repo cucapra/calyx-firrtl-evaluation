@@ -1,0 +1,5 @@
+bench-name,calyx,firrtl@sv,firrtl@firrtl
+3mm,17766,32460,32460
+bicg,892,1694,1694
+symm,9140,14852,14852
+trmm,4964,8804,8804

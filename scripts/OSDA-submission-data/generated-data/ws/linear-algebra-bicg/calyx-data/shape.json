@@ -1,0 +1,43 @@
+{
+  "A_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8,
+      8
+    ],
+    "numeric_type": "bitnum"
+  },
+  "s_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8
+    ],
+    "numeric_type": "bitnum"
+  },
+  "q_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8
+    ],
+    "numeric_type": "bitnum"
+  },
+  "p_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8
+    ],
+    "numeric_type": "bitnum"
+  },
+  "r_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8
+    ],
+    "numeric_type": "bitnum"
+  }
+}

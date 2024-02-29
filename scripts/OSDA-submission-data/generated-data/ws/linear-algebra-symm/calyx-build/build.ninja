@@ -1,0 +1,39 @@
+# Calyx compiler
+calyx-base = /home/calyx
+calyx-exe = $calyx-base/target/debug/calyx
+rule calyx
+  command = $calyx-exe -l $calyx-base -b $backend $args $in > $out
+
+# RTL simulation
+python = python3
+json_dat = $python /home/calyx/fud2/rsrc//json-dat.py
+rule hex-data
+  command = $json_dat --from-json $in $out
+rule json-data
+  command = $json_dat --to-json $out $in
+sim_data = /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-symm.futil.data
+datadir = sim_data
+build $datadir: hex-data $sim_data
+rule sim-run
+  command = ./$bin +DATA=$datadir +CYCLE_LIMIT=$cycle-limit $args > $out
+cycle-limit = 500000000
+
+# Normal Testbench Setup
+testbench = /home/calyx/fud2/rsrc//tb.sv
+
+# Verilator
+verilator = verilator
+cycle-limit = 500000000
+rule verilator-compile
+  command = $verilator $in $testbench $additional_input --trace --binary --top-module TOP -fno-inline -Mdir $out-dir
+rule cp
+  command = cp $in $out
+
+# build targets
+build linear-algebra-symm.sv: calyx /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-symm.futil
+  backend = verilog
+build verilator-out/VTOP: verilator-compile linear-algebra-symm.sv
+  out-dir = verilator-out
+build ../calyx.exe: cp verilator-out/VTOP
+
+default ../calyx.exe

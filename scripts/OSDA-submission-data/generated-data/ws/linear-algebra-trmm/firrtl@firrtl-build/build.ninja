@@ -1,0 +1,69 @@
+# Calyx compiler
+calyx-base = /home/calyx
+calyx-exe = $calyx-base/target/debug/calyx
+rule calyx
+  command = $calyx-exe -l $calyx-base -b $backend $args $in > $out
+
+# FIRRTL with primitives
+gen-firrtl-primitives-script = $calyx-base/tools/firrtl/generate-firrtl-with-primitives.py
+rule generate-firrtl-with-primitives
+  command = python3 $gen-firrtl-primitives-script $in > $out
+
+# FIRRTL testbench setup
+rule external-to-ref
+  command = sed 's/@external([0-9]*)/ref/g' $in | sed 's/@external/ref/g' > $out
+testbench = refmem_tb.sv
+gen-testbench-script = $calyx-base/tools/firrtl/generate-testbench.py
+additional_input = /home/calyx/fud2/rsrc//memories.sv
+rule generate-refmem-testbench
+  command = python3 $gen-testbench-script $in | tee $testbench $out
+dummy-script = /home/calyx/fud2/rsrc//dummy.sh
+rule dummy
+  command = bash $dummy-script $in > $out
+
+# Firrtl to Verilog compiler
+firrtl-exe = /home/firrtl/utils/bin/firrtl
+rule firrtl
+  command = $firrtl-exe -i $in -o $out -X sverilog
+primitives-for-firrtl = /home/calyx/fud2/rsrc//primitives-for-firrtl.sv
+rule add-firrtl-prims
+  command = cat $primitives-for-firrtl $in > $out
+
+# RTL simulation
+python = python3
+json_dat = $python /home/calyx/fud2/rsrc//json-dat.py
+rule hex-data
+  command = $json_dat --from-json $in $out
+rule json-data
+  command = $json_dat --to-json $out $in
+sim_data = /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-trmm.futil.data
+datadir = sim_data
+build $datadir: hex-data $sim_data
+rule sim-run
+  command = ./$bin +DATA=$datadir +CYCLE_LIMIT=$cycle-limit $args > $out
+cycle-limit = 500000000
+
+# Verilator
+verilator = verilator
+cycle-limit = 500000000
+rule verilator-compile
+  command = $verilator $in $testbench $additional_input --trace --binary --top-module TOP -fno-inline -Mdir $out-dir
+rule cp
+  command = cp $in $out
+
+# build targets
+build partial.futil: external-to-ref /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-trmm.futil
+build refmem-tb-copy.sv: generate-refmem-testbench partial.futil
+build partial.fir: calyx partial.futil
+  backend = firrtl
+  args = --synthesis
+build primitive-uses.json: calyx partial.futil
+  backend = primitive-uses
+  args = --synthesis
+build linear-algebra-trmm.fir: generate-firrtl-with-primitives partial.fir primitive-uses.json refmem-tb-copy.sv
+build linear-algebra-trmm.sv: firrtl linear-algebra-trmm.fir
+build verilator-out/VTOP: verilator-compile linear-algebra-trmm.sv
+  out-dir = verilator-out
+build ../firrtl@firrtl.exe: cp verilator-out/VTOP
+
+default ../firrtl@firrtl.exe

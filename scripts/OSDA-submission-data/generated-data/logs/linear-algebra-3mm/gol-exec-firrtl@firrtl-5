@@ -1,0 +1,11 @@
++ ./firrtl@firrtl.exe +DATA=firrtl@firrtl-data +CYCLE_LIMIT=500000000 +NOTRACE=1
+DATA (path to meminit files): firrtl@firrtl-data
+cycle limit set to            500000000
+VCD tracing disabled
+Simulated                32460 cycles
+- refmem_tb.sv:346: Verilog $finish
+
+real	0m0.032s
+user	0m0.031s
+sys	0m0.001s
++ set +o xtrace

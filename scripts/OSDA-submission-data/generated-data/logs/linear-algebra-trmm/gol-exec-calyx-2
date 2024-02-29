@@ -1,0 +1,11 @@
++ ./calyx.exe +DATA=calyx-data +CYCLE_LIMIT=500000000 +NOTRACE=1
+cycle limit set to            500000000
+VCD tracing disabled
+DATA (path to meminit files): calyx-data
+Simulated                 4964 cycles
+- /home/calyx/fud2/rsrc//tb.sv:69: Verilog $finish
+
+real	0m0.006s
+user	0m0.006s
+sys	0m0.000s
++ set +o xtrace

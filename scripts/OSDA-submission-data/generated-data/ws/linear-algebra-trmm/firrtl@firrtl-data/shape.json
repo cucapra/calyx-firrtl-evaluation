@@ -1,0 +1,28 @@
+{
+  "alpha_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      1
+    ],
+    "numeric_type": "bitnum"
+  },
+  "A_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8,
+      8
+    ],
+    "numeric_type": "bitnum"
+  },
+  "B_int": {
+    "is_signed": false,
+    "width": 32,
+    "shape": [
+      8,
+      12
+    ],
+    "numeric_type": "bitnum"
+  }
+}

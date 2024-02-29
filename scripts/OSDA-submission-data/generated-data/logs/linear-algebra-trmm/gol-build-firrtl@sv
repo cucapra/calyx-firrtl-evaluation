@@ -1,0 +1,230 @@
++ fud2 /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-trmm.futil --to sim --through firrtl -s sim.data=/home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-trmm.futil.data -o firrtl@sv.exe --dir firrtl@sv-build --keep
+[1/8] sed 's/@external([0-9]*)/ref/g' /home/calyx-firrtl-evaluation/benchmarks/polybench/linear-algebra-trmm.futil | sed 's/@external/ref/g' > partial.futil
+[2/8] python3 /home/calyx/tools/firrtl/generate-testbench.py partial.futil | tee refmem_tb.sv refmem-tb-copy.sv
+module TOP;
+
+// Signals for the main module.
+logic go, done, clk, reset;
+
+// fields for memory controlled externally START
+wire [3:0] A_int_addr0;
+wire [3:0] A_int_addr1;
+wire [31:0] A_int_write_data;
+wire [31:0] A_int_read_data;
+wire A_int_write_en;
+wire A_int_read_en;
+wire A_int_write_done;
+wire A_int_read_done;
+
+wire [3:0] B_int_addr0;
+wire [3:0] B_int_addr1;
+wire [31:0] B_int_write_data;
+wire [31:0] B_int_read_data;
+wire B_int_write_en;
+wire B_int_read_en;
+wire B_int_write_done;
+wire B_int_read_done;
+
+wire alpha_int_addr0;
+wire [31:0] alpha_int_write_data;
+wire [31:0] alpha_int_read_data;
+wire alpha_int_write_en;
+wire alpha_int_read_en;
+wire alpha_int_write_done;
+wire alpha_int_read_done;
+
+
+// fields for memory controlled externally END
+
+// Declaring memory START
+seq_mem_d2 # (
+    .D0_IDX_SIZE(4),
+    .D1_IDX_SIZE(4),
+    .D0_SIZE(8),
+    .D1_SIZE(8),
+    .WIDTH(32)
+    ) A_int (
+    .addr1(A_int_addr1),
+    .addr0(A_int_addr0),
+    .clk(clk),
+    .read_data(A_int_read_data),
+    .reset(reset),
+    .write_data(A_int_write_data),
+    .write_en(A_int_write_en),
+    .read_en(A_int_read_en),
+    .read_done(A_int_read_done),
+    .write_done(A_int_write_done)
+);
+
+seq_mem_d2 # (
+    .D0_IDX_SIZE(4),
+    .D1_IDX_SIZE(4),
+    .D0_SIZE(8),
+    .D1_SIZE(12),
+    .WIDTH(32)
+    ) B_int (
+    .addr1(B_int_addr1),
+    .addr0(B_int_addr0),
+    .clk(clk),
+    .read_data(B_int_read_data),
+    .reset(reset),
+    .write_data(B_int_write_data),
+    .write_en(B_int_write_en),
+    .read_en(B_int_read_en),
+    .read_done(B_int_read_done),
+    .write_done(B_int_write_done)
+);
+
+seq_mem_d1 # (
+    .IDX_SIZE(1),
+    .SIZE(1),
+    .WIDTH(32)
+    ) alpha_int (
+    .addr0(alpha_int_addr0),
+    .clk(clk),
+    .read_data(alpha_int_read_data),
+    .reset(reset),
+    .write_data(alpha_int_write_data),
+    .write_en(alpha_int_write_en),
+    .read_en(alpha_int_read_en),
+    .read_done(alpha_int_read_done),
+    .write_done(alpha_int_write_done)
+);
+
+
+// Declaring memory END
+
+// Declaring main module START
+main #() main (
+  .go(go),
+  .clk(clk),
+  .reset(reset),
+  .done(done),
+  .A_int_addr1(A_int_addr1),
+  .A_int_addr0(A_int_addr0),
+  .A_int_write_data(A_int_write_data),
+  .A_int_read_data(A_int_read_data),
+  .A_int_write_en(A_int_write_en),
+  .A_int_read_en(A_int_read_en),
+  .A_int_write_done(A_int_write_done),
+  .A_int_read_done(A_int_read_done),
+  .B_int_addr1(B_int_addr1),
+  .B_int_addr0(B_int_addr0),
+  .B_int_write_data(B_int_write_data),
+  .B_int_read_data(B_int_read_data),
+  .B_int_write_en(B_int_write_en),
+  .B_int_read_en(B_int_read_en),
+  .B_int_write_done(B_int_write_done),
+  .B_int_read_done(B_int_read_done),
+  .alpha_int_addr0(alpha_int_addr0),
+  .alpha_int_write_data(alpha_int_write_data),
+  .alpha_int_read_data(alpha_int_read_data),
+  .alpha_int_write_en(alpha_int_write_en),
+  .alpha_int_read_en(alpha_int_read_en),
+  .alpha_int_write_done(alpha_int_write_done),
+  .alpha_int_read_done(alpha_int_read_done)
+);
+// Declaring main module END
+
+localparam RESET_CYCLES = 3;
+
+// Cycle counter. Make this signed to catch errors with cycle simulation
+// counts.
+logic signed [63:0] cycle_count;
+
+always_ff @(posedge clk) begin
+  cycle_count <= cycle_count + 1;
+end
+
+always_ff @(posedge clk) begin
+  // Reset the design for a few cycles
+  if (cycle_count < RESET_CYCLES) begin
+    reset <= 1;
+    go <= 0;
+  end else begin
+    reset <= 0;
+    go <= 1;
+  end
+end
+
+// Output location of the VCD file
+string OUT;
+// Disable VCD tracing
+int NOTRACE;
+// Maximum number of cycles to simulate
+longint CYCLE_LIMIT;
+// Dummy variable to track value returned by $value$plusargs
+int CODE;
+// Directory to read/write memory
+string DATA;
+
+initial begin
+  CODE = $value$plusargs("DATA=%s", DATA);
+  $display("DATA (path to meminit files): %s", DATA);
+  // readmemh for each memory BEGIN
+  $readmemh({DATA, "/A_int.dat"}, A_int.mem.mem);
+  $readmemh({DATA, "/B_int.dat"}, B_int.mem.mem);
+  $readmemh({DATA, "/alpha_int.dat"}, alpha_int.mem);
+
+  // readmemh for each memory END
+  CODE = $value$plusargs("OUT=%s", OUT);
+  CODE = $value$plusargs("CYCLE_LIMIT=%d", CYCLE_LIMIT);
+  if (CYCLE_LIMIT != 0) begin
+    $display("cycle limit set to %d", CYCLE_LIMIT);
+  end
+  CODE = $value$plusargs("NOTRACE=%d", NOTRACE);
+  if (NOTRACE == 0) begin
+    $display("VCD tracing enabled");
+    $dumpfile(OUT);
+    $dumpvars(0,main);
+  end else begin
+    $display("VCD tracing disabled");
+  end
+
+  // Initial values
+  go = 0;
+  clk = 0;
+  reset = 1;
+  cycle_count = 0;
+
+  forever begin
+    #10 clk = ~clk;
+    if (cycle_count > RESET_CYCLES && done == 1) begin
+      // Subtract 1 because the cycle counter is incremented at the end of the
+      // cycle.
+      $display("Simulated %d cycles", cycle_count - RESET_CYCLES - 1);
+      $finish;
+    end else if (cycle_count != 0 && cycle_count == CYCLE_LIMIT + RESET_CYCLES) begin
+      $display("reached limit of %d cycles", CYCLE_LIMIT);
+      $finish;
+    end
+  end
+end
+
+// writememh for each memory BEGIN
+final begin
+    $writememh({DATA, "/A_int.out"}, A_int.mem.mem);
+    $writememh({DATA, "/B_int.out"}, B_int.mem.mem);
+    $writememh({DATA, "/alpha_int.out"}, alpha_int.mem);
+end
+// writememh for each memory END
+
+endmodule
+[3/8] /home/calyx/target/debug/calyx -l /home/calyx -b firrtl --emit-primitive-extmodules --synthesis partial.futil > dummy-out.fir
+[4/8] bash /home/calyx/fud2/rsrc//dummy.sh dummy-out.fir refmem-tb-copy.sv > linear-algebra-trmm.fir
+[5/8] /home/firrtl/utils/bin/firrtl -i linear-algebra-trmm.fir -o partial.sv -X sverilog
+[6/8] cat /home/calyx/fud2/rsrc//primitives-for-firrtl.sv partial.sv > linear-algebra-trmm.sv
+[7/8] verilator linear-algebra-trmm.sv refmem_tb.sv /home/calyx/fud2/rsrc//memories.sv --trace --binary --top-module TOP -fno-inline -Mdir verilator-out
+make: Entering directory '/home/calyx-firrtl-evaluation/scripts/data/generated-data/ws/linear-algebra-trmm/firrtl@sv-build/verilator-out'
+g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=1 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-shadow     -DVL_TIME_CONTEXT  -fcoroutines -std=gnu++14 -Os -c -o verilated.o /usr/local/share/verilator/include/verilated.cpp
+g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=1 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-shadow     -DVL_TIME_CONTEXT  -fcoroutines -std=gnu++14 -Os -c -o verilated_vcd_c.o /usr/local/share/verilator/include/verilated_vcd_c.cpp
+g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=1 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-shadow     -DVL_TIME_CONTEXT  -fcoroutines -std=gnu++14 -Os -c -o verilated_timing.o /usr/local/share/verilator/include/verilated_timing.cpp
+/usr/bin/perl /usr/local/share/verilator/bin/verilator_includer -DVL_INCLUDE_OPT=include VTOP.cpp VTOP___024root__DepSet_hf053e249__0.cpp VTOP___024root__DepSet_hbaffbf48__0.cpp VTOP_TOP__DepSet_h165605ae__0.cpp VTOP_main__DepSet_hceaa94cb__0.cpp VTOP_seq_mem_d2__D8_DB8__DepSet_hd5a0a237__0.cpp VTOP_seq_mem_d2__D8_DBc__DepSet_h592db236__0.cpp VTOP_std_reg__DepSet_hb7327545__0.cpp VTOP_seq_mem_d1__I1_S1__DepSet_h734bb07a__0.cpp VTOP_seq_mem_d1__I1_S1__DepSet_h3df76d15__0.cpp VTOP_seq_mem_d1__S40_I8__DepSet_h91d2d18e__0.cpp VTOP_seq_mem_d1__S40_I8__DepSet_h9c7e8d81__0.cpp VTOP_seq_mem_d1__S60_I8__DepSet_hd61e7fbd__0.cpp VTOP_seq_mem_d1__S60_I8__DepSet_hd94a3b54__0.cpp VTOP_std_add__W4__DepSet_heefb110d__0.cpp VTOP_std_reg__W4__DepSet_h93c021d8__0.cpp VTOP_std_le__W4__DepSet_hecdef082__0.cpp VTOP_std_reg__W1__DepSet_h7da8479a__0.cpp VTOP_std_reg__W3__DepSet_h63ff90bf__0.cpp VTOP_std_reg__W5__DepSet_hbb8d847f__0.cpp VTOP_std_fp_mult_pipe__I20_F0__DepSet_h83f47f50__0.cpp VTOP_std_fp_mult_pipe__I20_F0__DepSet_h8ea03c3f__0.cpp VTOP__main.cpp VTOP__Trace__0.cpp VTOP___024root__Slow.cpp VTOP___024root__DepSet_hf053e249__0__Slow.cpp VTOP___024root__DepSet_hbaffbf48__0__Slow.cpp VTOP_TOP__Slow.cpp VTOP_TOP__DepSet_h165605ae__0__Slow.cpp VTOP_TOP__DepSet_ha900f807__0__Slow.cpp VTOP_main__Slow.cpp VTOP_main__DepSet_hceaa94cb__0__Slow.cpp VTOP_main__DepSet_hd1d650c6__0__Slow.cpp VTOP_seq_mem_d2__D8_DB8__Slow.cpp VTOP_seq_mem_d2__D8_DB8__DepSet_hd8cc7eda__0__Slow.cpp VTOP_seq_mem_d2__D8_DBc__Slow.cpp VTOP_seq_mem_d2__D8_DBc__DepSet_h64596ed9__0__Slow.cpp VTOP_std_add__Slow.cpp VTOP_std_add__DepSet_hd954c515__0__Slow.cpp VTOP_std_reg__Slow.cpp VTOP_std_reg__DepSet_h7a5e324c__0__Slow.cpp VTOP_std_mult_pipe__Slow.cpp VTOP_std_mult_pipe__DepSet_hbe8d3e15__0__Slow.cpp VTOP_seq_mem_d1__I1_S1__Slow.cpp VTOP_seq_mem_d1__I1_S1__DepSet_h3df76d15__0__Slow.cpp VTOP_seq_mem_d1__S40_I8__Slow.cpp VTOP_seq_mem_d1__S40_I8__DepSet_h9c7e8d81__0__Slow.cpp VTOP_seq_mem_d1__S60_I8__Slow.cpp VTOP_seq_mem_d1__S60_I8__DepSet_hd94a3b54__0__Slow.cpp VTOP_std_add__W4__Slow.cpp VTOP_std_add__W4__DepSet_hb1a6ce04__0__Slow.cpp VTOP_std_const__W4_V0__Slow.cpp VTOP_std_const__W4_V0__DepSet_h2d9c8e06__0__Slow.cpp VTOP_std_const__W4_V7__Slow.cpp VTOP_std_const__W4_V7__DepSet_he249fb69__0__Slow.cpp VTOP_std_const__W4_Vb__Slow.cpp VTOP_std_const__W4_Vb__DepSet_hf834e520__0__Slow.cpp VTOP_std_const__W4_V1__Slow.cpp VTOP_std_const__W4_V1__DepSet_hb8fbe2bc__0__Slow.cpp VTOP_std_const__W4_V8__Slow.cpp VTOP_std_const__W4_V8__DepSet_h269269c0__0__Slow.cpp VTOP_std_const__W1_V0__Slow.cpp VTOP_std_const__W1_V0__DepSet_h2686d1b4__0__Slow.cpp VTOP_std_reg__W4__Slow.cpp VTOP_std_reg__W4__DepSet_h9e6bfdb7__0__Slow.cpp VTOP_std_le__W4__Slow.cpp VTOP_std_le__W4__DepSet_haf8aac8d__0__Slow.cpp VTOP_std_lt__W4__Slow.cpp VTOP_std_lt__W4__DepSet_h57a9a470__0__Slow.cpp VTOP_std_reg__W1__Slow.cpp VTOP_std_reg__W1__DepSet_h40d42375__0__Slow.cpp VTOP_std_reg__W3__Slow.cpp VTOP_std_reg__W3__DepSet_h2eab4c52__0__Slow.cpp VTOP_undef__W1__Slow.cpp VTOP_undef__W1__DepSet_heef0d4e4__0__Slow.cpp VTOP_std_add__W3__Slow.cpp VTOP_std_add__W3__DepSet_h5b69a7a6__0__Slow.cpp VTOP_std_reg__W5__Slow.cpp VTOP_std_reg__W5__DepSet_h86b96112__0__Slow.cpp VTOP_std_wire__W1__Slow.cpp VTOP_std_wire__W1__DepSet_h98d36270__0__Slow.cpp VTOP_std_fp_mult_pipe__I20_F0__Slow.cpp VTOP_std_fp_mult_pipe__I20_F0__DepSet_h8ea03c3f__0__Slow.cpp VTOP__Syms.cpp VTOP__Trace__0__Slow.cpp > VTOP__ALL.cpp
+g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=1 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-sign-compare -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-shadow     -DVL_TIME_CONTEXT  -fcoroutines -std=gnu++14 -Os -c -o VTOP__ALL.o VTOP__ALL.cpp
+echo "" > VTOP__ALL.verilator_deplist.tmp
+Archive ar -rcs VTOP__ALL.a VTOP__ALL.o
+g++    verilated.o verilated_vcd_c.o verilated_timing.o VTOP__ALL.a      -o VTOP
+rm VTOP__ALL.verilator_deplist.tmp
+make: Leaving directory '/home/calyx-firrtl-evaluation/scripts/data/generated-data/ws/linear-algebra-trmm/firrtl@sv-build/verilator-out'
+[8/8] cp verilator-out/VTOP '../firrtl@sv.exe'
++ set +o xtrace
