@@ -35,7 +35,12 @@ fi
 source ${SCRIPT_DIR}/helper.sh
 
 if [ ! -d ${CALYX_DIR} ]; then
-    echo "${CALYX_DIR} not directory!"
+    echo "${CALYX_DIR} not directory! exiting..."
+    exit
+fi
+
+if [ ! -d ${BENCH_DIR} ]; then
+    echo "The benchmark directory ${BENCH_DIR} does not exist! exiting..."
     exit
 fi
 
