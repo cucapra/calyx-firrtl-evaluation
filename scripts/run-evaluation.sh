@@ -1,12 +1,15 @@
+SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
+BASE_DIR=$( dirname ${SCRIPT_DIR} )
+
 # assumes that you have fud2 setup
-if [ $# -ne 1 ]; then
-    echo "USAGE: bash $0 CALYX_DIR"
+if [ $# -lt 3 ]; then
+    echo "USAGE: bash $0 CALYX_DIR BENCH_LIST BENCH_DIR [TRACE_OPT]"
+    echo "BENCH_LIST is a txt file containing the list of benchmarks to run"
+    echo "BENCH_DIR is the name of the subdirectory in ${BASE_DIR} that contains the benchmarks to run"
+    echo "if TRACE_OPT is not --trace (this includes not given), then tracing will not happen"
     exit
 fi
 
-SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
-BASE_DIR=$( dirname ${SCRIPT_DIR} )
-POLYBENCH_DIR=${BASE_DIR}/benchmarks/polybench
 DATA_DIR=${SCRIPT_DIR}/data
 GENERATED_DATA_DIR=${DATA_DIR}/generated-data
 WS=${GENERATED_DATA_DIR}/ws
@@ -17,8 +20,17 @@ BYTES_OF_SV_CSV=${RESULTS_DIR}/bytes-of-sv.csv
 CYCLE_COUNTS_CSV=${RESULTS_DIR}/cycle-counts.csv
 MODES=(calyx firrtl@sv firrtl@firrtl)
 
-TEST_LIST=${SCRIPT_DIR}/bench-list.txt
 CALYX_DIR=$1
+TEST_LIST=$2 # ${SCRIPT_DIR}/bench-list.txt
+BENCH_DIR=${BASE_DIR}/benchmarks/${3}
+TRACE_OPT=$4
+
+if [ "${TRACE_OPT}" == "--trace" ]; then
+    echo "==Enabling tracing..."
+else
+    echo "==Disabling tracing..."
+fi
+
 
 source ${SCRIPT_DIR}/helper.sh
 
@@ -38,8 +50,8 @@ function setup_executables() {
     local bench_name=$1
     local ws=$2
     local logs=$3
-    futil_file=${POLYBENCH_DIR}/${bench_name}.futil
-    data_file=${POLYBENCH_DIR}/${bench_name}.futil.data
+    futil_file=${BENCH_DIR}/${bench_name}.futil
+    data_file=${BENCH_DIR}/${bench_name}.futil.data
     echo "Setting up executables..."
     (
         set -o xtrace
@@ -65,9 +77,15 @@ function run_executable() {
     local exec_file=$1
     local data_dir=$2
     local log_file=$3
+    local trace_file=$4         # output of tracing if tracing is enabled.
+    if [ "${TRACE_OPT}" == "--trace" ]; then
+        TRACE_ARGS="+NOTRACE=0 +OUT=${trace_file}"
+    else
+        TRACE_ARGS="+NOTRACE=1"
+    fi
     (
         set -o xtrace
-        time ./${exec_file} +DATA=${data_dir} +CYCLE_LIMIT=500000000 +NOTRACE=1
+        time ./${exec_file} +DATA=${data_dir} +CYCLE_LIMIT=500000000 ${TRACE_ARGS}
         set +o xtrace
     ) &> ${log_file}
 }
@@ -84,7 +102,7 @@ function run_executables() {
             echo "Running executable for ${mode}..."
             for num in $( seq 1 10 ); do
                 rm -f ${mode_data_dir}/*.out
-                run_executable ${mode}.exe ${mode_data_dir} ${logs}/gol-exec-${mode}-${num}
+                run_executable ${mode}.exe ${mode_data_dir} ${logs}/gol-exec-${mode}-${num} ${ws}/${mode}-trace.vcd
             done
             python3 ${CALYX_DIR}/fud2/rsrc/json-dat.py --to-json ${logs}/${mode}-result.json ${mode_data_dir} # just get the result from the last run
         else
@@ -96,7 +114,7 @@ function run_executables() {
 function setup_data_dir() {
     local bench_name=$1
     echo "Creating data directory..."
-    data_file=${POLYBENCH_DIR}/${bench_name}.futil.data
+    data_file=${BENCH_DIR}/${bench_name}.futil.data
     python3 ${CALYX_DIR}/fud2/rsrc/json-dat.py --from-json ${data_file} sim-data
 }
 

@@ -1,4 +1,4 @@
-linear-algebra-3mm
-linear-algebra-bicg
-linear-algebra-symm
-linear-algebra-trmm
+language-tutorial-mem
+language-tutorial-control
+language-tutorial-compute
+language-tutorial-iterate
