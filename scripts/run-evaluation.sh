@@ -5,7 +5,7 @@ BASE_DIR=$( dirname ${SCRIPT_DIR} )
 if [ $# -lt 3 ]; then
     echo "USAGE: bash $0 CALYX_DIR BENCH_LIST BENCH_DIR [TRACE_OPT]"
     echo "BENCH_LIST is a txt file containing the list of benchmarks to run"
-    echo "BENCH_DIR is the name of the subdirectory in ${BASE_DIR} that contains the benchmarks to run"
+    echo "BENCH_DIR is the name of the subdirectory in ${BASE_DIR}/benchmarks that contains the benchmarks to run"
     echo "if TRACE_OPT is not --trace (this includes not given), then tracing will not happen"
     exit
 fi
@@ -18,7 +18,7 @@ RESULTS_DIR=${GENERATED_DATA_DIR}/results
 PERFORMANCE_CSV=${RESULTS_DIR}/performance.csv
 BYTES_OF_SV_CSV=${RESULTS_DIR}/bytes-of-sv.csv
 CYCLE_COUNTS_CSV=${RESULTS_DIR}/cycle-counts.csv
-MODES=(calyx firrtl@sv firrtl@firrtl)
+MODES=(calyx calyxRef firrtl@sv firrtl@firrtl) # calyx-ref is using "ref" to extract memories
 
 CALYX_DIR=$1
 TEST_LIST=$2 # ${SCRIPT_DIR}/bench-list.txt
@@ -59,6 +59,23 @@ function setup_executables() {
         fud2 ${futil_file} --to sim --through verilator -s sim.data=${data_file} -o calyx.exe --dir calyx-build --keep
         set +o xtrace
     ) &> ${logs}/gol-build-calyx
+    (
+        set -o xtrace
+        # FIXME: create a fud2 pipeline for this?
+        build_dir=calyxRef-build
+        mkdir -p ${build_dir}
+        cd ${build_dir}
+        # create a copy that contains ref
+        sed 's/@external([0-9]*)/ref/g' ${futil_file} | sed 's/@external/ref/g' > partial.futil
+        # compile that to sv
+        ${CALYX_DIR}/target/debug/calyx -l /home/ayaka/projects/calyx -b verilog partial.futil --synthesis > ${bench_name}.sv
+        # create custom tb
+        python3 ${CALYX_DIR}/tools/firrtl/generate-testbench.py partial.futil > refmem_tb.sv
+        # create executable using verilator
+        verilator ${bench_name}.sv refmem_tb.sv --trace --binary --top-module TOP -fno-inline -Mdir verilator-out
+        cp verilator-out/VTOP ${ws}/calyxRef.exe
+        set +o xtrace
+    ) &> ${logs}/gol-build-calyxRef
     (
         set -o xtrace
         # exec from firrtl with sv primitives
@@ -147,7 +164,7 @@ function process_results() {
     local bench_name=$1
     local logs=$2
     # extract all times
-    short_name=$( echo "${bench_name}" | sed 's/linear-algebra-//g' )
+    short_name=$( echo "${bench_name}" | sed 's/linear-algebra-//g' | sed 's/language-tutorial-//g' )
     time_line="${short_name}"
     for mode in "${MODES[@]}"; do
         mode_time=$( get_avg_time_from_logs ${mode} ${logs} )
@@ -186,9 +203,9 @@ function process_results() {
 function main () {
     backup_old_results
     mkdir -p ${WS} ${LOGS} ${RESULTS_DIR}
-    echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${PERFORMANCE_CSV}
-    echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${BYTES_OF_SV_CSV}
-    echo "bench-name,calyx,firrtl@sv,firrtl@firrtl" > ${CYCLE_COUNTS_CSV}
+    echo "bench-name,calyx,calyxRef,firrtl@sv,firrtl@firrtl" > ${PERFORMANCE_CSV}
+    echo "bench-name,calyx,calyxRef,firrtl@sv,firrtl@firrtl" > ${BYTES_OF_SV_CSV}
+    echo "bench-name,calyx,calyxRef,firrtl@sv,firrtl@firrtl" > ${CYCLE_COUNTS_CSV}
     while read name; do
         ws=${WS}/${name}
         logs=${LOGS}/${name}
