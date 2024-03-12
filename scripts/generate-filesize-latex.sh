@@ -67,16 +67,17 @@ function make_footer() {
 function make_body() {
     {
         read
-        while IFS=, read name calyx fir_sv fir_fir; do
+        while IFS=, read name calyx calyxRef fir_sv fir_fir; do
             bench_macro=$( convert_nums_to_words ${name} )
             macro_header="${MACROS_IDENT}${bench_macro}"
             if [ "${project}" == TOTAL ]; then
                 echo "\hline"
                 echo "\hline"
             fi
-            echo "\\${macro_header}BenchName & \\${macro_header}Calyx & \\${macro_header}FirSV & \\${macro_header}FirFir \\\\"
+            echo "\\${macro_header}BenchName & \\${macro_header}CalyxRef & \\${macro_header}FirSV & \\${macro_header}FirFir \\\\"
             echo "\newcommand{\\${macro_header}BenchName}{${name}}" >> ${MACROS_OUT}
             echo "\newcommand{\\${macro_header}Calyx}{${calyx}}" >> ${MACROS_OUT}
+            echo "\newcommand{\\${macro_header}CalyxRef}{${calyxRef}}" >> ${MACROS_OUT}
             echo "\newcommand{\\${macro_header}FirSV}{${fir_sv}}" >> ${MACROS_OUT}
             echo "\newcommand{\\${macro_header}FirFir}{${fir_fir}}" >> ${MACROS_OUT}
         done

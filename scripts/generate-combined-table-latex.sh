@@ -56,9 +56,9 @@ function make_footer() {
 function make_body() {
     {
         read
-        while IFS=, read name calyx fir_sv fir_fir; do
+        while IFS=, read name calyx calyxRef fir_sv fir_fir; do
             bench_macro=$( convert_nums_to_words ${name} )
-            echo "\performance${bench_macro}BenchName & \performance${bench_macro}Calyx & \filesize${bench_macro}Calyx & \performance${bench_macro}FirSV & \filesize${bench_macro}FirSV & \performance${bench_macro}FirFir & \filesize${bench_macro}FirFir \\\\"
+            echo "\performance${bench_macro}BenchName & \performance${bench_macro}CalyxRef & \filesize${bench_macro}CalyxRef & \performance${bench_macro}FirSV & \filesize${bench_macro}FirSV & \performance${bench_macro}FirFir & \filesize${bench_macro}FirFir \\\\"
         done
     } < ${IN_FILE}
 }
